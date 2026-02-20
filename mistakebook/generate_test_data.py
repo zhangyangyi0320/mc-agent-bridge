@@ -19,6 +19,7 @@ class TestDataGeneratorGUI:
         # 默认值
         self.default_num_records = 100
         self.default_subject_ratios = {subject: 1/len(self.subjects) for subject in self.subjects}
+        self.default_difficulty_ratios = {difficulty: 1/len(self.difficulties) for difficulty in self.difficulties}
         
         # 创建界面
         self.create_widgets()
@@ -578,6 +579,61 @@ class TestDataGeneratorGUI:
             return True
         except Exception as e:
             print(f"保存Excel文件失败: {e}")
+            return False
+
+    def save_data_to_word(self, data, filename):
+        """
+        将数据保存为Word文档
+        
+        Args:
+            data (list): 要保存的数据列表
+            filename (str): 保存的文件名
+        """
+        try:
+            from docx import Document
+            from docx.shared import Inches, Pt
+            from docx.enum.text import WD_ALIGN_PARAGRAPH
+            
+            # 创建文档
+            doc = Document()
+            
+            # 添加标题
+            title = doc.add_heading('错题本测试数据', 0)
+            title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            
+            # 添加所有数据
+            for i, row in enumerate(data, 1):
+                # 添加题号标题
+                doc.add_heading(f'第{i}题', level=1)
+                
+                # 添加各项内容
+                doc.add_paragraph(f"时间: {row['时间']}")
+                doc.add_paragraph(f"科目: {row['科目']}")
+                doc.add_paragraph(f"难度: {row['难度']}")
+                
+                # 题干可能较长，单独段落
+                p_question = doc.add_paragraph()
+                p_question.add_run(f"题干: ").bold = True
+                p_question.add_run(f"{row['题干']}")
+                
+                # 正确答案
+                p_answer = doc.add_paragraph()
+                p_answer.add_run(f"正确答案: ").bold = True
+                p_answer.add_run(f"{row['正确答案']}")
+                
+                # 附件路径
+                doc.add_paragraph(f"附件路径: {row['附件路径'] if row['附件路径'] else '无'}")
+                
+                # 添加分隔线
+                doc.add_paragraph("-" * 50)
+                doc.add_paragraph()  # 空行分隔
+            
+            # 保存文档
+            doc.save(filename)
+            print(f"成功生成 {len(data)} 条测试数据，保存到 {filename}")
+            return True
+        except Exception as e:
+            print(f"保存Word文件失败: {e}")
             return False
 
     def save_data_to_pdf(self, data, filename):
