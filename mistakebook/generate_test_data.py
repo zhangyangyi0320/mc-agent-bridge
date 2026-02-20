@@ -10,7 +10,7 @@ class TestDataGeneratorGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("错题本测试数据生成器")
-        self.root.geometry("600x700")
+        self.root.geometry("600x800")
         
         # 初始化数据
         self.subjects = ["语文", "数学", "英语", "物理", "化学", "生物", "历史", "地理", "道法"]
@@ -102,12 +102,29 @@ class TestDataGeneratorGUI:
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
         
+        # 难度占比设置
+        difficulty_frame = ttk.LabelFrame(main_frame, text="📊 难度占比设置", padding=10)
+        difficulty_frame.pack(fill=tk.X, pady=5)
+        
+        # 创建难度占比设置的框架
+        self.difficulty_ratio_vars = {}
+        for i, difficulty in enumerate(self.difficulties):
+            ttk.Label(difficulty_frame, text=f"{difficulty}:").grid(row=0, column=i*2, sticky=tk.W, padx=5, pady=2)
+            
+            var = tk.StringVar(value="33.33")  # 默认约为1/3，即33.33%
+            self.difficulty_ratio_vars[difficulty] = var
+            
+            entry = ttk.Entry(difficulty_frame, textvariable=var, width=8)
+            entry.grid(row=0, column=i*2+1, sticky=tk.W, padx=5, pady=2)
+            ttk.Label(difficulty_frame, text="%").grid(row=0, column=i*2+2, sticky=tk.W, padx=(0, 15), pady=2)
+        
         # 生成按钮
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=20)
         
         ttk.Button(button_frame, text="🔄 重置为默认", command=self.reset_to_default).pack(side=tk.LEFT, padx=(0, 10))
-        ttk.Button(button_frame, text="⚙️ 自动平衡占比", command=self.auto_balance_ratios).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(button_frame, text="⚙️ 自动平衡科目占比", command=self.auto_balance_ratios).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(button_frame, text="⚖️ 自动平衡难度占比", command=self.auto_balance_difficulty_ratios).pack(side=tk.LEFT, padx=(0, 10))
         ttk.Button(button_frame, text="✨ 生成测试数据", command=self.generate_test_data, style='Accent.TButton').pack(side=tk.RIGHT)
     
     def browse_export_path(self):
@@ -126,9 +143,14 @@ class TestDataGeneratorGUI:
         self.export_path_var.set(os.getcwd())
         
         # 重置科目比例为平均分布
-        default_ratio = round(100.0 / len(self.subjects), 2)
+        default_subject_ratio = round(100.0 / len(self.subjects), 2)
         for var in self.subject_ratio_vars.values():
-            var.set(str(default_ratio))
+            var.set(str(default_subject_ratio))
+        
+        # 重置难度比例为平均分布
+        default_difficulty_ratio = round(100.0 / len(self.difficulties), 2)
+        for var in self.difficulty_ratio_vars.values():
+            var.set(str(default_difficulty_ratio))
     
     def auto_balance_ratios(self):
         """自动平衡科目占比为总和100%"""
@@ -151,6 +173,27 @@ class TestDataGeneratorGUI:
         except ValueError:
             messagebox.showerror("错误", "请输入有效的数值")
     
+    def auto_balance_difficulty_ratios(self):
+        """自动平衡难度占比为总和100%"""
+        try:
+            # 计算当前总和
+            current_sum = sum(float(var.get()) for var in self.difficulty_ratio_vars.values())
+            
+            # 如果总和不为0，则按比例调整到总和为100
+            if current_sum > 0:
+                factor = 100.0 / current_sum
+                for difficulty, var in self.difficulty_ratio_vars.items():
+                    current_val = float(var.get())
+                    new_val = round(current_val * factor, 2)
+                    var.set(str(new_val))
+            else:
+                # 如果总和为0，设为平均分布
+                default_ratio = round(100.0 / len(self.difficulties), 2)
+                for var in self.difficulty_ratio_vars.values():
+                    var.set(str(default_ratio))
+        except ValueError:
+            messagebox.showerror("错误", "请输入有效的数值")
+    
     def generate_test_data(self):
         """生成测试数据"""
         try:
@@ -160,24 +203,42 @@ class TestDataGeneratorGUI:
             
             # 获取科目比例
             subject_ratios = {}
-            total_ratio = 0
+            total_subject_ratio = 0
             for subject, var in self.subject_ratio_vars.items():
                 ratio = float(var.get())
                 subject_ratios[subject] = ratio
-                total_ratio += ratio
+                total_subject_ratio += ratio
             
-            # 验证比例总和
-            if abs(total_ratio - 100.0) > 0.1:  # 允许0.1的误差
+            # 验证科目比例总和
+            if abs(total_subject_ratio - 100.0) > 0.1:  # 允许0.1的误差
                 result = messagebox.askyesno(
                     "提示", 
-                    f"科目占比总和为{total_ratio:.2f}%，不等于100%。是否继续？\n\n" +
+                    f"科目占比总和为{total_subject_ratio:.2f}%，不等于100%。是否继续？\n\n" +
+                    "点击'是'继续生成，点击'否'取消。"
+                )
+                if not result:
+                    return
+            
+            # 获取难度比例
+            difficulty_ratios = {}
+            total_difficulty_ratio = 0
+            for difficulty, var in self.difficulty_ratio_vars.items():
+                ratio = float(var.get())
+                difficulty_ratios[difficulty] = ratio
+                total_difficulty_ratio += ratio
+            
+            # 验证难度比例总和
+            if abs(total_difficulty_ratio - 100.0) > 0.1:  # 允许0.1的误差
+                result = messagebox.askyesno(
+                    "提示", 
+                    f"难度占比总和为{total_difficulty_ratio:.2f}%，不等于100%。是否继续？\n\n" +
                     "点击'是'继续生成，点击'否'取消。"
                 )
                 if not result:
                     return
             
             # 生成数据
-            test_data = self.generate_random_mistake_data(num_records, subject_ratios)
+            test_data = self.generate_random_mistake_data(num_records, subject_ratios, difficulty_ratios)
             
             # 确定要导出的格式
             formats_to_export = [fmt for fmt, var in self.export_formats.items() if var.get()]
@@ -226,13 +287,14 @@ class TestDataGeneratorGUI:
         except Exception as e:
             messagebox.showerror("错误", f"生成数据时出错：{e}")
     
-    def generate_random_mistake_data(self, num_records, subject_ratios):
+    def generate_random_mistake_data(self, num_records, subject_ratios, difficulty_ratios=None):
         """
         生成与mistakebook兼容的随机测试数据
         
         Args:
             num_records (int): 要生成的记录数量
             subject_ratios (dict): 各科目的占比
+            difficulty_ratios (dict): 各难度的占比
         
         Returns:
             list: 包含错题数据的字典列表
@@ -476,9 +538,29 @@ class TestDataGeneratorGUI:
         # 打乱科目顺序
         random.shuffle(subject_list)
         
+        # 根据比例生成难度列表
+        difficulty_list = []
+        if difficulty_ratios:  # 如果提供了难度比例
+            for difficulty, ratio in difficulty_ratios.items():
+                count = int(num_records * ratio / 100)
+                difficulty_list.extend([difficulty] * count)
+            
+            # 如果数量不够，用随机难度补齐
+            while len(difficulty_list) < num_records:
+                difficulty_list.append(random.choice(self.difficulties))
+            
+            # 打乱难度顺序
+            random.shuffle(difficulty_list)
+        else:
+            # 如果没有提供难度比例，则随机分配
+            difficulty_list = [random.choice(self.difficulties) for _ in range(num_records)]
+        
         for i in range(num_records):
             # 按照预设比例选择科目
             subject = subject_list[i]
+            
+            # 按照预设比例选择难度
+            difficulty = difficulty_list[i]
             
             # 随机生成时间（最近30天内）
             start_date = datetime.now() - timedelta(days=30)
@@ -491,9 +573,6 @@ class TestDataGeneratorGUI:
             # 随机选择题干和答案
             question = random.choice(question_banks[subject])
             answer = random.choice(answer_banks[subject])
-            
-            # 随机选择难度
-            difficulty = random.choice(self.difficulties)
             
             # 附件路径（随机生成或为空）
             attachment_path = f"attachment_{i+1}.pdf" if random.random() > 0.7 else ""
