@@ -779,10 +779,10 @@ class MistakeBookApp:
         """创建搜索标签页"""
         # 创建框架
         self.search_frame = ttk.Frame(self.notebook)
-        self.notebook.add(self.search_frame, text="🔍 搜索")
+        self.notebook.add(self.search_frame, text=self.get_text('tab_search'))
         
         # 搜索条件框架
-        search_condition_frame = ttk.LabelFrame(self.search_frame, text="🔍 搜索条件", padding=10)
+        search_condition_frame = ttk.LabelFrame(self.search_frame, text="🔍 "+self.get_text('search_keyword').split(':')[0]+" "+self.get_text('all_subjects'), padding=10)
         search_condition_frame.pack(fill=tk.X, pady=5)
         
         # 多条件搜索框架
@@ -790,36 +790,36 @@ class MistakeBookApp:
         multi_search_frame.pack(fill=tk.X, pady=5)
         
         # 按科目搜索
-        ttk.Label(multi_search_frame, text="📘 科目:", font=('Microsoft YaHei', 10)).grid(row=0, column=0, sticky=tk.W, padx=(0, 5))
+        ttk.Label(multi_search_frame, text=self.get_text('subject_label')[:-1]+":", font=('Microsoft YaHei', 10)).grid(row=0, column=0, sticky=tk.W, padx=(0, 5))
         self.search_subject_var = tk.StringVar()
         subject_combo = ttk.Combobox(multi_search_frame, textvariable=self.search_subject_var, 
-                                    values=["全部", "语文", "数学", "英语", "物理", "化学", "生物", "历史", "地理", "道法"], 
+                                    values=[self.get_text('all_subjects'), "语文", "数学", "英语", "物理", "化学", "生物", "历史", "地理", "道法"], 
                                     state="readonly", width=12)
         subject_combo.grid(row=0, column=1, padx=(0, 10))
-        subject_combo.set("全部")
+        subject_combo.set(self.get_text('all_subjects'))
         
         # 按难度搜索
-        ttk.Label(multi_search_frame, text="📊 难度:", font=('Microsoft YaHei', 10)).grid(row=0, column=2, sticky=tk.W, padx=(0, 5))
+        ttk.Label(multi_search_frame, text=self.get_text('difficulty_label')[:-1]+":", font=('Microsoft YaHei', 10)).grid(row=0, column=2, sticky=tk.W, padx=(0, 5))
         self.search_difficulty_var = tk.StringVar()
         difficulty_combo = ttk.Combobox(multi_search_frame, textvariable=self.search_difficulty_var, 
-                                       values=["全部", "简单", "中等", "困难"], state="readonly", width=12)
+                                       values=[self.get_text('all_difficulties'), self.get_text('difficulty_simple'), self.get_text('difficulty_medium'), self.get_text('difficulty_hard')], state="readonly", width=12)
         difficulty_combo.grid(row=0, column=3, padx=(0, 10))
-        difficulty_combo.set("全部")
+        difficulty_combo.set(self.get_text('all_difficulties'))
         
         # 按关键词搜索
-        ttk.Label(multi_search_frame, text="🔑 关键词:", font=('Microsoft YaHei', 10)).grid(row=0, column=4, sticky=tk.W, padx=(0, 5))
+        ttk.Label(multi_search_frame, text=self.get_text('search_keyword'), font=('Microsoft YaHei', 10)).grid(row=0, column=4, sticky=tk.W, padx=(0, 5))
         self.search_keyword_var = tk.StringVar()
         keyword_entry = ttk.Entry(multi_search_frame, textvariable=self.search_keyword_var, width=20)
         keyword_entry.grid(row=0, column=5, padx=(0, 10), sticky=tk.EW)
         keyword_entry.bind('<KeyRelease>', self.combined_search)
         
         # 按日期搜索
-        ttk.Label(multi_search_frame, text="📅 日期:", font=('Microsoft YaHei', 10)).grid(row=0, column=6, sticky=tk.W, padx=(0, 5))
-        ttk.Label(multi_search_frame, text="从", font=('Microsoft YaHei', 10)).grid(row=0, column=7, sticky=tk.W)
+        ttk.Label(multi_search_frame, text=self.get_text('search_date'), font=('Microsoft YaHei', 10)).grid(row=0, column=6, sticky=tk.W, padx=(0, 5))
+        ttk.Label(multi_search_frame, text=self.get_text('search_start_date')[:-1], font=('Microsoft YaHei', 10)).grid(row=0, column=7, sticky=tk.W)
         self.search_start_date_var = tk.StringVar()
         start_date_entry = ttk.Entry(multi_search_frame, textvariable=self.search_start_date_var, width=10)
         start_date_entry.grid(row=0, column=8, padx=(0, 5))
-        ttk.Label(multi_search_frame, text="到", font=('Microsoft YaHei', 10)).grid(row=0, column=9, sticky=tk.W)
+        ttk.Label(multi_search_frame, text=self.get_text('search_end_date')[:-1], font=('Microsoft YaHei', 10)).grid(row=0, column=9, sticky=tk.W)
         self.search_end_date_var = tk.StringVar()
         end_date_entry = ttk.Entry(multi_search_frame, textvariable=self.search_end_date_var, width=10)
         end_date_entry.grid(row=0, column=10, padx=(0, 5))
@@ -831,11 +831,11 @@ class MistakeBookApp:
         button_frame = ttk.Frame(search_condition_frame)
         button_frame.pack(fill=tk.X, pady=10)
         
-        ttk.Button(button_frame, text="🔍 搜索", command=self.combined_search, style='Action.TButton').pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="🔄 重置", command=self.reset_search_filters, style='Action.TButton').pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="🔍 "+self.get_text('search_keyword').split(':')[0], command=self.combined_search, style='Action.TButton').pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="🔄 "+self.get_text('reset_filters').split()[1], command=self.reset_search_filters, style='Action.TButton').pack(side=tk.LEFT, padx=5)
         
         # 结果表格框架
-        table_frame = ttk.LabelFrame(self.search_frame, text="🔍 搜索结果", padding=10)
+        table_frame = ttk.LabelFrame(self.search_frame, text="🔍 "+self.get_text('search_results').split()[1], padding=10)
         table_frame.pack(fill=tk.BOTH, expand=True, pady=5)
         
         # 创建表格
@@ -868,9 +868,9 @@ class MistakeBookApp:
         style = ttk.Style()
         style.configure('Action.TButton', font=('Microsoft YaHei', 10))
         
-        ttk.Button(action_button_frame, text="📖 查看详情", command=self.view_search_detail, style='Action.TButton').grid(row=0, column=0, padx=2, sticky='ew')
-        ttk.Button(action_button_frame, text="✏️ 编辑", command=self.edit_search_item, style='Action.TButton').grid(row=0, column=1, padx=2, sticky='ew')
-        ttk.Button(action_button_frame, text="❌ 删除", command=self.delete_search_item, style='Action.TButton').grid(row=0, column=2, padx=2, sticky='ew')
+        ttk.Button(action_button_frame, text="📖 "+self.get_text('view_detail').split()[1], command=self.view_search_detail, style='Action.TButton').grid(row=0, column=0, padx=2, sticky='ew')
+        ttk.Button(action_button_frame, text="✏️ "+self.get_text('edit_item').split()[1], command=self.edit_search_item, style='Action.TButton').grid(row=0, column=1, padx=2, sticky='ew')
+        ttk.Button(action_button_frame, text="❌ "+self.get_text('delete_item').split()[1], command=self.delete_search_item, style='Action.TButton').grid(row=0, column=2, padx=2, sticky='ew')
         
         # 配置列权重，使按钮平均分布
         for i in range(3):
@@ -2242,9 +2242,20 @@ class MistakeBookApp:
         app_button_frame = ttk.Frame(app_frame)
         app_button_frame.pack(fill=tk.X)
         
-        ttk.Button(app_button_frame, text="ℹ️ 关于应用", command=self.show_about, 
+        # 语言切换下拉框
+        lang_frame = ttk.Frame(app_button_frame)
+        lang_frame.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
+        
+        ttk.Label(lang_frame, text="🌐 语言/Language:").pack(anchor=tk.W)
+        self.language_var = tk.StringVar(value=self.language)
+        language_combo = ttk.Combobox(lang_frame, textvariable=self.language_var,
+                                     values=["zh", "en"], state="readonly", width=10)
+        language_combo.pack(pady=5)
+        language_combo.bind('<<ComboboxSelected>>', self.change_language)
+        
+        ttk.Button(app_button_frame, text="ℹ️ "+self.get_text('about_app')[3:], command=self.show_about, 
                   style='Action.TButton').pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
-        ttk.Button(app_button_frame, text="❓ 帮助", command=self.show_help, 
+        ttk.Button(app_button_frame, text="❓ "+self.get_text('help_info')[3:], command=self.show_help, 
                   style='Action.TButton').pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
         
         # 数据统计（复用导入导出标签页的统计功能）
@@ -2263,6 +2274,14 @@ class MistakeBookApp:
         # 更新统计数据
         self.update_settings_statistics()
 
+    def change_language(self, event=None):
+        """更改语言"""
+        new_lang = self.language_var.get()
+        if new_lang != self.language:
+            self.switch_language(new_lang)
+            # 重启应用以应用新语言
+            messagebox.showinfo(self.get_text('success'), '语言已更改，请重启应用以完全生效更改。')
+    
     def update_settings_statistics(self):
         """更新设置标签页的统计数据"""
         # 清空文本框

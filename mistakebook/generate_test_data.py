@@ -51,7 +51,7 @@ class TestDataGeneratorGUI:
             'CSV': tk.BooleanVar(value=True),
             'TXT': tk.BooleanVar(value=True),
             'Excel': tk.BooleanVar(value=False),
-            'PDF': tk.BooleanVar(value=False)
+            'Word': tk.BooleanVar(value=False)
         }
         
         for format_name, var in self.export_formats.items():
@@ -204,16 +204,15 @@ class TestDataGeneratorGUI:
                             success_count += 1
                     except ImportError:
                         messagebox.showerror("错误", "需要安装pandas和openpyxl库才能导出Excel格式：\npip install pandas openpyxl")
-                elif fmt == 'PDF':
+                elif fmt == 'Word':
                     try:
-                        from reportlab.lib.pagesizes import A4
-                        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-                        from reportlab.lib.styles import getSampleStyleSheet
-                        filename = os.path.join(export_path, "mistakebook_test_data.pdf")
-                        if self.save_data_to_pdf(test_data, filename):
+                        from docx import Document
+                        from docx.shared import Inches
+                        filename = os.path.join(export_path, "mistakebook_test_data.docx")
+                        if self.save_data_to_word(test_data, filename):
                             success_count += 1
                     except ImportError:
-                        messagebox.showerror("错误", "需要安装reportlab库才能导出PDF格式：\npip install reportlab")
+                        messagebox.showerror("错误", "需要安装python-docx库才能导出Word格式：\npip install python-docx")
             
             # 显示完成信息
             if success_count > 0:
