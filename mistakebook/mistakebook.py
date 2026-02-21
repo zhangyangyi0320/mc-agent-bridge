@@ -1336,7 +1336,7 @@ class MistakeBookApp:
         # 由于现在使用标签页，我们需要创建一个新的顶层窗口
         if not hasattr(self, 'add_window') or not self.add_window.winfo_exists():
             self.add_window = tk.Toplevel(self.root)
-            self.add_window.title("➕ 添加错题" if not hasattr(self, 'current_edit_index') else "✏️ 编辑错题")
+            self.add_window.title("✏️ 编辑错题" if hasattr(self, 'current_edit_index') else "➕ 添加错题")
             self.add_window.geometry("800x700")
             self.add_window.transient(self.root)  # 设置为临时窗口
             self.add_window.grab_set()  # 模态窗口
@@ -1344,6 +1344,8 @@ class MistakeBookApp:
             # 创建添加界面内容
             self.create_add_interface_content(self.add_window)
         else:
+            # 在显示已存在的窗口之前，更新标题
+            self.add_window.title("✏️ 编辑错题" if hasattr(self, 'current_edit_index') else "➕ 添加错题")
             self.add_window.lift()  # 将窗口置于最前
 
     def create_add_interface_content(self, parent):
@@ -1436,9 +1438,7 @@ class MistakeBookApp:
         # 如果是在编辑模式，更新标题和填入数据
         if hasattr(self, 'current_edit_index'):
             parent.title("✏️ 编辑错题")
-            for child in form_frame.winfo_children():
-                if isinstance(child, ttk.LabelFrame):
-                    child.config(text="✏️ 编辑错题")
+            form_frame.config(text="✏️ 编辑错题")
 
     def hide_add_interface(self):
         """隐藏添加界面"""
