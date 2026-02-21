@@ -728,23 +728,67 @@ class TestDataGeneratorGUI:
             from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
             from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
             from reportlab.lib.units import inch
+            from reportlab.lib import colors
+            from reportlab.pdfbase import pdfmetrics
+            from reportlab.pdfbase.ttfonts import TTFont
+            import os
+            
+            # 注册中文字体
+            font_name = 'SimSun'
+            try:
+                # 尝试注册字体
+                pdfmetrics.registerFont(TTFont('SimSun', 'SimSun.ttf'))
+            except:
+                # 如果SimSun不可用，尝试其他常见中文字体
+                try:
+                    # 在Windows系统上查找常见字体文件
+                    font_paths = [
+                        r'C:\Windows\Fonts\simsun.ttc',    # 宋体
+                        r'C:\Windows\Fonts\msyh.ttc',      # 微软雅黑
+                        r'C:\Windows\Fonts\msyhbd.ttc',    # 微软雅黑粗体
+                        r'C:\Windows\Fonts\simhei.ttf',    # 黑体
+                    ]
+                    
+                    font_found = False
+                    for font_path in font_paths:
+                        if os.path.exists(font_path):
+                            if 'simsun' in font_path.lower():
+                                font_name = 'SimSun'
+                            elif 'msyh' in font_path.lower():
+                                font_name = 'MicrosoftYaHei'
+                            elif 'simhei' in font_path.lower():
+                                font_name = 'SimHei'
+                            
+                            pdfmetrics.registerFont(TTFont(font_name, font_path))
+                            font_found = True
+                            break
+                    
+                    if not font_found:
+                        # 如果找不到系统字体，则报错
+                        print("未找到支持中文的字体文件")
+                        return False
+                except:
+                    print("无法注册中文字体，请确保系统中有中文字体文件")
+                    return False
             
             doc = SimpleDocTemplate(filename, pagesize=A4)
             story = []
             
-            # 标题样式
+            # 标题样式（使用中文字体）
             title_style = ParagraphStyle(
                 'CustomTitle',
                 parent=getSampleStyleSheet()['Title'],
+                fontName=font_name,
                 fontSize=20,
                 spaceAfter=30,
                 alignment=1  # 居中
             )
             
-            # 正文样式
+            # 正文样式（使用中文字体）
             content_style = ParagraphStyle(
                 'CustomContent',
                 parent=getSampleStyleSheet()['Normal'],
+                fontName=font_name,
                 fontSize=10,
                 spaceAfter=6
             )
@@ -769,6 +813,9 @@ class TestDataGeneratorGUI:
             doc.build(story)
             print(f"成功生成 {len(data)} 条测试数据，保存到 {filename}")
             return True
+        except ImportError:
+            print("需要安装reportlab库，请运行: pip install reportlab")
+            return False
         except Exception as e:
             print(f"保存PDF文件失败: {e}")
             return False

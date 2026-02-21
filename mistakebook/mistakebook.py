@@ -10,28 +10,13 @@ import tkinter.font as tkFont
 class MistakeBookApp:
     def __init__(self, root):
         self.root = root
-        self.root.title(self.get_text('app_title'))
         self.root.geometry("1000x700")
-        
-        # 初始化字体
-        self.default_font = tkFont.nametofont("TkDefaultFont")
-        self.default_font_size = self.default_font.actual()['size']
         
         # 数据文件路径（包含配置信息）
         self.data_file = "mistakebook_data.csv"
         
         # 初始化配置（从CSV文件中读取）
         self.load_config()
-        
-        # 初始化数据（从CSV文件中读取）
-        self.data = []
-        self.load_data()
-        
-        # 初始化合集数据
-        self.collections = {}  # 存储合集信息 {collection_name: {'description': str, 'problems': [problem_ids]}}
-        
-        # 初始化语言设置
-        self.language = self.config.get('language', 'zh')  # 默认为中文
         
         # 初始化多语言字典
         self.translations = {
@@ -57,6 +42,7 @@ class MistakeBookApp:
                 'menu_export_stats_chart': '导出统计图表',
                 'menu_export_stats_report_txt': '导出统计报告(TXT)',
                 'menu_export_stats_report_pdf': '导出统计报告(PDF)',
+                'menu_export_stats_charts_pdf': '导出统计图表(PDF)',
                 'menu_theme': '主题切换',
                 'menu_font': '字体设置',
                 'menu_backup': '数据备份',
@@ -172,6 +158,7 @@ class MistakeBookApp:
                 'menu_export_stats_chart': 'Export Statistics Chart',
                 'menu_export_stats_report_txt': 'Export Statistics Report (TXT)',
                 'menu_export_stats_report_pdf': 'Export Statistics Report (PDF)',
+                'menu_export_stats_charts_pdf': 'Export Statistics Charts (PDF)',
                 'menu_theme': 'Toggle Theme',
                 'menu_font': 'Font Settings',
                 'menu_backup': 'Data Backup',
@@ -221,9 +208,9 @@ class MistakeBookApp:
                 'import_success': 'Successfully imported {count} mistakes!',
                 'export_success': 'Data exported to {path}',
                 'data_empty': 'No valid mistake data found, please check the file format.',
-                'select_mistake': 'Please select mistakes to operate first!',
-                'fields_required': 'Question and Answer cannot be empty!',
-                'delete_confirm': 'Are you sure to delete the selected mistakes?',
+                'select_mistake': 'Please select a mistake to operate!',
+                'fields_required': 'Question and answer cannot be empty!',
+                'delete_confirm': 'Are you sure you want to delete the selected mistakes?',
                 'collection_create': '➕ Create New Collection',
                 'collection_name': 'Collection Name:',
                 'collection_desc': 'Collection Description:',
@@ -234,7 +221,7 @@ class MistakeBookApp:
                 'view_problems': 'View Problems',
                 'export_collection': 'Export Collection',
                 'delete_collection': 'Delete Collection',
-                'collection_delete_confirm': 'Are you sure to delete collection \'{name}\'? This action cannot be undone!',
+                'collection_delete_confirm': 'Are you sure you want to delete collection \'{name}\'? This action cannot be undone!',
                 'stats_info': '📈 Statistics Info',
                 'stats_charts': '📊 Statistics Charts',
                 'refresh_stats': '🔄 Refresh Statistics',
@@ -251,21 +238,38 @@ class MistakeBookApp:
                 'clear_all': '🗑️ Clear All Data',
                 'backup_data': '🔄 Backup Data',
                 'restore_data': '📥 Restore Data',
-                'app_settings': '🔧 Application Settings',
-                'check_updates': '🔄 Check Updates',
-                'about_app': 'ℹ️ About Application',
+                'app_settings': '🔧 App Settings',
+                'check_updates': '🔄 Check for Updates',
+                'about_app': 'ℹ️ About App',
                 'help_info': '❓ Help',
                 'data_stats': '📈 Data Statistics',
                 'total_mistakes': 'Total Mistakes',
-                'clear_confirm': 'Are you sure to clear all mistake data? This action cannot be undone!',
+                'clear_confirm': 'Are you sure you want to clear all mistake data? This action cannot be undone!',
                 'backup_success': 'Data backed up to: {path}',
-                'restore_confirm': 'Are you sure to restore data from backup file? Current data will be overwritten!',
+                'restore_confirm': 'Are you sure you want to restore data from backup? Current data will be overwritten!',
                 'restore_success': 'Data restored from backup!',
                 'help_title': 'Help',
-                'help_content': 'Mistake Book Management System User Guide:\n\n1. System Overview\nThe Mistake Book Management System is a comprehensive learning aid that helps users efficiently manage mistakes, providing functions for mistake entry, classification, retrieval, and analysis.\n\n2. Feature Modules\n\n1. Mistake List Tab\n   - Function: View and manage all mistake records\n   - Add Mistake: Click the "Add" button and fill in the question information in the pop-up\n     * Time: Automatically filled with current time, can also be manually modified\n     * Subject: Select the subject of the question (Chinese, Math, English, etc.)\n     * Question: Enter the question content\n     * Correct Answer: Fill in the correct solution思路 or answer\n     * Attachment: Associate related files (images, documents, etc.)\n     * Difficulty: Mark question difficulty (Simple, Medium, Hard)\n   - Edit Mistake: Select a mistake and click "Edit" to modify\n   - Delete Mistake: Select a mistake and click "Delete"\n   - View Detail: Click "Detail" to view complete question information\n\n2. Search Tab\n   - Multi-condition filtering: Support filtering by subject, difficulty, keywords, date range\n   - Smart search: Enter keywords to search question, answer, subject, etc. simultaneously\n   - Operation functions: Perform view, edit, delete operations on search results\n   - Combined filtering: Apply multiple filtering conditions simultaneously for precise results\n\n3. Import & Export Tab\n   - Import functions:\n     * CSV format: Support standard CSV format data import\n     * TXT format: Support specific format text import\n     * Excel format: Support XLSX format import (requires pandas)\n     * Word format: Support DOCX format import (requires python-docx)\n   - Export functions:\n     * CSV format: Export to standard CSV file, easy for Excel to open\n     * TXT format: Export to text format, easy for reading\n     * Excel format: Export to XLSX format (requires pandas)\n     * Word format: Export to DOCX format (requires python-docx)\n     * PDF format: Export to PDF document (requires reportlab)\n   - Batch operations: Support exporting all data or selected data only\n\n4. Collection Management Tab (New)\n   - Create Collection: Create mistake collections with name and description\n   - Manage Collection: View, edit, delete created collections\n   - Problem Assignment: Assign mistakes to specific collections\n   - Export Collection: Export specified collection to file separately\n\n5. Statistics Tab\n   - Data Overview: Display overall mistake count, subject distribution, difficulty distribution\n   - Visualization: Display data distribution in pie chart and bar chart formats\n   - Report Generation: Export statistics reports and charts\n   - Real-time Update: Automatically update statistics when data changes\n\n6. Settings Tab\n   - Theme Toggle: Support light/dark theme toggle\n   - Font Settings: Adjust interface font size\n   - Data Management: Provide data backup and restore functions\n   - Application Info: View version and about information\n\n3. Usage Tips\n   1. Regularly backup data to prevent data loss\n   2. Use difficulty labels appropriately for easier review\n   3. Utilize search function to quickly locate specific mistakes\n   4. Analyze weak learning areas through statistics function\n   5. Categorize related mistakes using collection function\n\n4. Quick Operations\n   - Directly edit or view details after selecting mistakes\n   - Select multiple mistakes simultaneously for batch operations\n   - Search function supports real-time filtering, responsive to input\n   - Support dragging to adjust window size for better display\n\n5. Common Issues\n   Q: Cannot import Excel file?\n   A: Please ensure pandas library is installed: pip install pandas openpyxl\n\n   Q: PDF export failed?\n   A: Please ensure reportlab library is installed: pip install reportlab\n\n   Q: How to backup data?\n   A: Click "Data Backup" button in settings tab and select backup location\n\n   Q: Can I categorize mistakes by topic?\n   A: Yes, use collection function to create topic collections and categorize related mistakes',
+                'help_content': 'Mistake Book Management System User Guide:\n\n1. System Overview\nThe Mistake Book Management System is a comprehensive learning aid tool that helps users efficiently manage mistakes, providing functions such as mistake entry, classification, retrieval, and analysis.\n\n2. Functional Modules\n\n1. Mistake List Tab\n   - Function: View and manage all mistake records\n   - Add Mistake: Click the "Add" button and fill in the question information in the pop-up window\n     * Time: Automatically filled with current time, can also be manually modified\n     * Subject: Select the subject to which the question belongs (Chinese, Mathematics, English, etc.)\n     * Question: Enter the question content\n     * Correct Answer: Fill in the correct solution idea or answer\n     * Attachment: Can associate related files (images, documents, etc.)\n     * Difficulty: Mark the question difficulty (Simple, Medium, Hard)\n   - Edit Mistake: Select the mistake and click the "Edit" button to modify\n   - Delete Mistake: Select the mistake and click the "Delete" button\n   - View Details: Click the "Details" button to view complete question information\n\n2. Search Tab\n   - Multi-condition filtering: Support filtering by subject, difficulty, keyword, date range\n   - Smart search: Enter keywords to search across fields such as question, answer, subject, etc.\n   - Operation functions: Perform operations such as viewing, editing, deleting on search results\n   - Combined filtering: Apply multiple filtering conditions simultaneously for precise results\n\n3. Import/Export Tab\n   - Import Functions:\n     * CSV format: Support standard CSV format data import\n     * TXT format: Support specific format text import\n     * Excel format: Support XLSX format import (requires pandas)\n     * Word format: Support DOCX format import (requires python-docx)\n   - Export Functions:\n     * CSV format: Export as standard CSV file, suitable for Excel\n     * TXT format: Export as text format, suitable for reading\n     * Excel format: Export as XLSX format (requires pandas)\n     * Word format: Export as DOCX format (requires python-docx)\n     * PDF format: Export as PDF document (requires reportlab)\n   - Batch operations: Support exporting all data or only selected data\n\n4. Collection Management Tab (New)\n   - Create Collection: Create mistake collections with names and descriptions\n   - Manage Collections: View, edit, delete created collections\n   - Problem Assignment: Assign mistakes to specific collections\n   - Export Collections: Export specified collections as separate files\n\n5. Statistics Tab\n   - Data overview: Display total number of mistakes, distribution by subject, distribution by difficulty\n   - Visualization: Display data distribution in pie charts and bar charts\n   - Report generation: Export statistical reports and charts\n   - Real-time updates: Automatically update statistics when data changes\n\n6. Settings Tab\n   - Theme switching: Support light/dark theme switching\n   - Font settings: Adjust interface font size\n   - Data management: Provide data backup and restore functions\n   - App information: View version and about information\n\n3. Usage Tips\n   1. Regularly back up data to prevent data loss\n   2. Use difficulty marking appropriately for subsequent review\n   3. Use search function to quickly locate specific mistakes\n   4. Analyze learning weak points through statistical functions\n   5. Use collection function to categorize related mistakes\n\n4. Quick Operations\n   - Directly edit or view details after selecting mistakes\n   - Select multiple mistakes simultaneously for batch operations\n   - Search function supports real-time filtering, responding as you type\n   - Support dragging to adjust window size for better display\n\n5. Common Questions\n   Q: Cannot import Excel file?\n   A: Please ensure pandas library is installed: pip install pandas openpyxl\n\n   Q: Export to PDF failed?\n   A: Please ensure reportlab library is installed: pip install reportlab\n\n   Q: How to back up data?\n   A: Click the "Data Backup" button in the settings tab and select the backup location\n\n   Q: Can I categorize mistakes by topic?\n   A: Yes, use the collection function to create topic collections and categorize related mistakes',
                 'about_content': 'Mistake Book Management System v1.0\n\nAuthor: MistakeBook Team\nFeatures: Manage mistakes, support import/export multiple formats\nInterface: Built with tkinter\n\nThank you for using this system!'
             }
         }
+        
+        # 初始化语言设置（必须在使用get_text方法之前）
+        self.language = self.config.get('language', 'zh')  # 默认为中文
+        
+        # 设置窗口标题
+        self.root.title(self.get_text('app_title'))
+        
+        # 初始化字体
+        self.default_font = tkFont.nametofont("TkDefaultFont")
+        self.default_font_size = self.default_font.actual()['size']
+        
+        # 初始化数据（从CSV文件中读取）
+        self.data = []
+        self.load_data()
+        
+        # 初始化合集数据
+        self.collections = {}  # 存储合集信息 {collection_name: {'description': str, 'problems': [problem_ids]}}
         
         # 创建界面
         self.create_widgets()
@@ -275,7 +279,6 @@ class MistakeBookApp:
         
         # 绑定窗口大小调整事件
         self.root.bind('<Configure>', self.on_window_resize)
-        
     def load_config(self):
         """从CSV文件中加载配置信息，如果没有则创建默认配置"""
         default_config = {
@@ -477,6 +480,7 @@ class MistakeBookApp:
         stats_menu.add_command(label=self.get_text('menu_export_stats_chart'), command=self.export_statistics_chart)
         stats_menu.add_command(label=self.get_text('menu_export_stats_report_txt'), command=self.export_statistics_report)
         stats_menu.add_command(label=self.get_text('menu_export_stats_report_pdf'), command=self.export_statistics_report_pdf)
+        stats_menu.add_command(label=self.get_text('menu_export_stats_charts_pdf'), command=self.export_statistics_charts_pdf)
         menubar.add_cascade(label=self.get_text('menu_statistics'), menu=stats_menu)
         
         # 设置菜单
@@ -2765,19 +2769,23 @@ class MistakeBookApp:
                   style='Action.TButton').pack(side=tk.LEFT, padx=2)
         
         # 导出统计图表按钮
-        ttk.Button(button_frame, text="📤 导出图表", command=self.export_statistics_chart, 
+        ttk.Button(button_frame, text="📤 "+self.get_text('export_charts'), command=self.export_statistics_chart, 
                   style='Action.TButton').pack(side=tk.LEFT, padx=2)
         
         # 导出统计报告按钮(TXT)
-        ttk.Button(button_frame, text="📝 导出报告(TXT)", command=self.export_statistics_report, 
+        ttk.Button(button_frame, text="📝 "+self.get_text('export_report_txt'), command=self.export_statistics_report, 
                   style='Action.TButton').pack(side=tk.LEFT, padx=2)
         
         # 导出统计报告按钮(PDF)
-        ttk.Button(button_frame, text="📄 导出报告(PDF)", command=self.export_statistics_report_pdf, 
+        ttk.Button(button_frame, text="📄 "+self.get_text('export_report_pdf'), command=self.export_statistics_report_pdf, 
+                  style='Action.TButton').pack(side=tk.LEFT, padx=2)
+        
+        # 导出统计图表按钮(PDF)
+        ttk.Button(button_frame, text="📊 "+self.get_text('menu_export_stats_charts_pdf'), command=self.export_statistics_charts_pdf, 
                   style='Action.TButton').pack(side=tk.LEFT, padx=2)
         
         # 配置列权重，使按钮平均分布
-        for i in range(4):  # 更新为4个按钮
+        for i in range(5):  # 更新为5个按钮
             button_frame.columnconfigure(i, weight=1)
         
         # 初始化统计信息
@@ -3309,6 +3317,179 @@ class MistakeBookApp:
                 # 绘制项目标签
                 if font:
                     draw.text((bar_x + bar_width/2 - len(item)*3, y + height - margin + 5), item, fill='black', font=font)
+
+    def export_statistics_charts_pdf(self):
+        """导出统计图表为PDF"""
+        try:
+            from reportlab.lib.pagesizes import A4
+            from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
+            from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+            from reportlab.lib.units import inch
+            from reportlab.lib import colors
+            from reportlab.pdfbase import pdfmetrics
+            from reportlab.pdfbase.ttfonts import TTFont
+            import tempfile
+            import os
+            from PIL import Image as PILImage, ImageDraw
+            import math
+            
+            # 注册中文字体
+            font_name = 'SimSun'
+            try:
+                # 尝试注册字体
+                pdfmetrics.registerFont(TTFont('SimSun', 'SimSun.ttf'))
+            except:
+                # 如果SimSun不可用，尝试其他常见中文字体
+                try:
+                    # 在Windows系统上查找常见字体文件
+                    font_paths = [
+                        r'C:\Windows\Fonts\simsun.ttc',    # 宋体
+                        r'C:\Windows\Fonts\msyh.ttc',      # 微软雅黑
+                        r'C:\Windows\Fonts\msyhbd.ttc',    # 微软雅黑粗体
+                        r'C:\Windows\Fonts\simhei.ttf',    # 黑体
+                    ]
+                    
+                    font_found = False
+                    for font_path in font_paths:
+                        if os.path.exists(font_path):
+                            if 'simsun' in font_path.lower():
+                                font_name = 'SimSun'
+                            elif 'msyh' in font_path.lower():
+                                font_name = 'MicrosoftYaHei'
+                            elif 'simhei' in font_path.lower():
+                                font_name = 'SimHei'
+                            
+                            pdfmetrics.registerFont(TTFont(font_name, font_path))
+                            font_found = True
+                            break
+                    
+                    if not font_found:
+                        # 如果找不到系统字体，则报错
+                        messagebox.showerror("错误", "未找到支持中文的字体文件")
+                        return
+                except:
+                    messagebox.showerror("错误", "无法注册中文字体，请确保系统中有中文字体文件")
+                    return
+            
+            # 询问保存位置
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".pdf",
+                filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")],
+                title="导出统计图表为PDF"
+            )
+            
+            if not file_path:
+                return
+            
+            # 统计数据
+            subject_counts = {}
+            difficulty_counts = {}
+            
+            for item in self.data:
+                # 统计科目
+                subject = item['科目']
+                subject_counts[subject] = subject_counts.get(subject, 0) + 1
+                
+                # 统计难度
+                difficulty = item['难度']
+                difficulty_counts[difficulty] = difficulty_counts.get(difficulty, 0) + 1
+            
+            # 创建临时图像文件
+            img_width, img_height = 1200, 1600
+            img = PILImage.new('RGB', (img_width, img_height), 'white')
+            draw = ImageDraw.Draw(img)
+            
+            # 尝试加载字体
+            try:
+                from PIL import ImageFont
+                font_large = ImageFont.truetype("arial.ttf", 24)
+                font_medium = ImageFont.truetype("arial.ttf", 16)
+                font_small = ImageFont.truetype("arial.ttf", 12)
+            except:
+                # 如果找不到字体文件，则使用默认字体
+                font_large = None
+                font_medium = None
+                font_small = None
+            
+            # 添加标题
+            title = "📊 错题统计图表"
+            if font_large:
+                draw.text((img_width//2 - 80, 20), title, fill='black', font=font_large)
+            else:
+                draw.text((img_width//2 - 80, 20), title, fill='black')
+            
+            # 绘制科目分布饼图
+            self.draw_pil_pie_chart(draw, subject_counts, 50, 80, 500, 500, "科目分布饼图", font_medium)
+            
+            # 绘制难度分布饼图
+            self.draw_pil_pie_chart(draw, difficulty_counts, 650, 80, 500, 500, "难度分布饼图", font_medium)
+            
+            # 绘制科目分布柱状图
+            self.draw_pil_bar_chart(draw, subject_counts, 50, 650, 700, 500, "科目分布柱状图", font_medium)
+            
+            # 绘制难度分布柱状图
+            self.draw_pil_bar_chart(draw, difficulty_counts, 750, 650, 400, 500, "难度分布柱状图", font_medium)
+            
+            # 保存临时图像
+            temp_img_path = os.path.join(tempfile.gettempdir(), "temp_chart.png")
+            img.save(temp_img_path)
+            
+            # 创建PDF文档
+            doc = SimpleDocTemplate(file_path, pagesize=A4)
+            story = []
+            
+            # 标题样式（使用中文字体）
+            title_style = ParagraphStyle(
+                'CustomTitle',
+                parent=getSampleStyleSheet()['Title'],
+                fontName=font_name,
+                fontSize=16,
+                spaceAfter=30,
+                alignment=1  # 居中
+            )
+            
+            # 正文样式（使用中文字体）
+            content_style = ParagraphStyle(
+                'CustomContent',
+                parent=getSampleStyleSheet()['Normal'],
+                fontName=font_name,
+                fontSize=10,
+                spaceAfter=12
+            )
+            
+            # 添加标题
+            title_para = Paragraph("📊 错题统计图表", title_style)
+            story.append(title_para)
+            story.append(Spacer(1, 0.2 * inch))
+            
+            # 添加生成时间
+            time_para = Paragraph(f"生成时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", content_style)
+            story.append(time_para)
+            story.append(Spacer(1, 0.2 * inch))
+            
+            # 添加图表
+            try:
+                # 缩放图像以适应PDF页面
+                img_obj = Image(temp_img_path, width=6*inch, height=8*inch)
+                img_obj.hAlign = 'CENTER'
+                story.append(img_obj)
+            except:
+                # 如果无法添加图像，则添加说明文字
+                story.append(Paragraph("图表无法显示", content_style))
+            
+            # 生成PDF
+            doc.build(story)
+            
+            # 删除临时图像文件
+            if os.path.exists(temp_img_path):
+                os.remove(temp_img_path)
+            
+            messagebox.showinfo("成功", f"统计图表已导出到 {file_path}")
+            
+        except ImportError:
+            messagebox.showerror("错误", "需要安装reportlab和Pillow库，请运行: pip install reportlab Pillow")
+        except Exception as e:
+            messagebox.showerror("错误", f"PDF导出失败: {str(e)}")
 
     def export_statistics_report(self):
         """导出统计报告"""
