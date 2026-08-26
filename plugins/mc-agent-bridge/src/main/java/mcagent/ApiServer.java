@@ -639,6 +639,8 @@ public class ApiServer {
                     return;
                 }
                 if (!path.equals("/api/health") && !authed(ex)) {
+                    plugin.getLogger().warning("McAgentBridge: unauthorized request rejected: "
+                            + method + " " + path + " from " + ex.getRemoteAddress());
                     send(ex, 401, Json.toJson(err("unauthorized")));
                     return;
                 }
