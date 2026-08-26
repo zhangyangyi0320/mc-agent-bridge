@@ -1,0 +1,16 @@
+# mc-agent-bridge configuration
+enabled: true
+
+# Bind address. Keep 127.0.0.1 unless you put a reverse proxy (with TLS) in front.
+host: 127.0.0.1
+port: 25566
+
+# Bearer token required for every request (except /api/health).
+# Leave empty to have a random token generated on first start (then copied here).
+token: ""
+
+# When true, only read endpoints work (status/players/worlds/logs/health).
+read-only: false
+
+# How many recent console lines to keep for GET /api/logs
+log-lines: 2000

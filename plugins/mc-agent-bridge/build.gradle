@@ -1,0 +1,37 @@
+plugins {
+    id 'java'
+}
+
+group = 'mcagent'
+version = '1.0.0'
+description = 'HTTP API bridge that lets an AI agent control and maintain a (Folia) Minecraft server'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    // paper-api + adventure are provided locally in libs/ (extracted from the server jar)
+    flatDir { dirs 'libs' }
+}
+
+dependencies {
+    compileOnly files(
+        'libs/paper-api.jar',
+        'libs/adventure-api.jar',
+        'libs/adventure-key.jar'
+    )
+}
+
+tasks.named('processResources') {
+    from('src/main/resources') { include 'plugin.yml', 'config.yml' }
+}
+
+tasks.named('jar') {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    manifest {
+        attributes 'Implementation-Version': project.version
+    }
+}
