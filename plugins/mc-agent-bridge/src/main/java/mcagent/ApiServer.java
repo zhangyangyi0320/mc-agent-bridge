@@ -79,6 +79,20 @@ public class ApiServer {
         return false;
     }
 
+    private static String serverSoftware() {
+        if (Schedulers.isFolia()) return "Folia";
+        String name = Bukkit.getServer().getName();
+        if (name != null) {
+            String n = name.toLowerCase();
+            if (n.contains("purpur")) return "Purpur";
+            if (n.contains("paper")) return "Paper";
+            if (n.contains("spigot")) return "Spigot";
+            if (n.contains("craftbukkit")) return "CraftBukkit";
+            return name;
+        }
+        return "Unknown";
+    }
+
     private static void send(HttpExchange ex, int code, String body) throws IOException {
         byte[] b = body == null ? new byte[0] : body.getBytes(StandardCharsets.UTF_8);
         ex.getResponseHeaders().add("Content-Type", "application/json; charset=utf-8");
@@ -147,7 +161,9 @@ public class ApiServer {
 
     private Object route(String method, String path, HttpExchange ex) throws Exception {
         if (method.equals("GET") && path.equals("/api/health")) {
-            return map("status", "ok", "folia", Schedulers.isFolia());
+            return map("status", "ok", "folia", Schedulers.isFolia(),
+                    "server_software", serverSoftware(),
+                    "minecraft_version", Bukkit.getServer().getBukkitVersion());
         }
         if (method.equals("GET") && path.equals("/api/status")) return status();
         if (method.equals("GET") && path.equals("/api/worlds")) return worlds();
@@ -219,14 +235,18 @@ public class ApiServer {
 
     private Object status() throws Exception {
         return Schedulers.sync(plugin, () -> {
-            Map<String, Object> r = new LinkedHashMap<>();
-            double[] tps = Bukkit.getServer().getTPS();
-            r.put("tps", new double[]{round(tps[0]), round(tps[1]), round(tps[2])});
-            r.put("mspt", round(Bukkit.getServer().getAverageTickTime()));
-            r.put("uptime_ms", ManagementFactory.getRuntimeMXBean().getUptime());
-            r.put("version", Bukkit.getServer().getVersion());
-            r.put("bukkit_version", Bukkit.getServer().getBukkitVersion());
-            r.put("folia", Schedulers.isFolia());
+        Map<String, Object> r = new LinkedHashMap<>();
+        double[] tps;
+        try { tps = Bukkit.getServer().getTPS(); } catch (Throwable t) { tps = new double[]{-1, -1, -1}; }
+        r.put("tps", new double[]{round(tps[0]), round(tps[1]), round(tps[2])});
+        double mspt;
+        try { mspt = Bukkit.getServer().getAverageTickTime(); } catch (Throwable t) { mspt = -1; }
+        r.put("mspt", round(mspt));
+        r.put("uptime_ms", ManagementFactory.getRuntimeMXBean().getUptime());
+        r.put("server_software", serverSoftware());
+        r.put("minecraft_version", Bukkit.getServer().getBukkitVersion());
+        r.put("server_version", Bukkit.getServer().getVersion());
+        r.put("folia", Schedulers.isFolia());
             r.put("online_players", Bukkit.getOnlinePlayers().size());
             r.put("max_players", Bukkit.getServer().getMaxPlayers());
             Runtime rt = Runtime.getRuntime();

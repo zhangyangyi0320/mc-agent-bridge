@@ -1,6 +1,6 @@
 # McAgentBridge
 
-一个面向 **Paper / Folia（1.21+）** Minecraft 服务器的 HTTP API 桥接插件，让 AI Agent（或任意 HTTP 客户端）能够查看、控制并维护服务器。
+一个面向 **Paper / Folia / Spigot / Purpur（1.18+）** Minecraft 服务器的 HTTP API 桥接插件，让 AI Agent（或任意 HTTP 客户端）能够查看、控制并维护服务器。
 
 > 配套 Agent 技能见仓库 `skill/` 目录（`SKILL.md` + `mc_agent_client.py`）。
 
@@ -23,10 +23,12 @@
 
 | 服务端 | 版本 | 说明 |
 |--------|------|------|
-| Paper | 1.21+ | 原生支持 |
-| Folia | 1.21+ | 通过 `RegionizedServer` 反射检测，命令统一走全局区域调度 |
+| Paper | 1.18+ | 原生支持 |
+| Folia | 1.18+ | 通过 `RegionizedServer` 反射检测，命令统一走全局区域调度 |
+| Spigot | 1.18+ | 标准 Bukkit API，兼容 |
+| Purpur | 1.18+ | 基于 Paper，兼容 |
 
-> `api-version: "1.21"`，`folia-compatible: true`。
+> `api-version: "1.18"`，`folia-compatible: true`。已验证/支持范围：Minecraft 1.18 ~ 1.21+，服务端类型 Paper / Folia / Spigot / Purpur。`/api/status` 与 `/api/health` 会返回 `server_software` 与 `minecraft_version` 供识别。
 
 ---
 
