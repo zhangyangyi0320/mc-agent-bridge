@@ -3,7 +3,7 @@ plugins {
 }
 
 group = 'mcagent'
-version = '1.1.0'
+version = '1.2.0-beta'
 description = 'HTTP API bridge that lets an AI agent control and maintain a (Folia) Minecraft server'
 
 java {

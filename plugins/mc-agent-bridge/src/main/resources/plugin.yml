@@ -1,7 +1,7 @@
 name: McAgentBridge
-version: 1.1.0
+version: 1.2.0-beta
 main: mcagent.McAgentBridge
-api-version: "1.18"
+api-version: "1.12"
 author: agentbridge
-description: HTTP API bridge that lets an AI agent inspect, control and maintain a Minecraft server (Paper / Folia / Spigot / Purpur, 1.18+).
+description: HTTP API bridge that lets an AI agent inspect, control and maintain a Minecraft server (Paper / Folia / Spigot / Purpur, 1.12+). Test build with per-feature toggles and configurable network exposure.
 folia-compatible: true

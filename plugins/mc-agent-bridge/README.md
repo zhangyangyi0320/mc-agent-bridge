@@ -1,8 +1,8 @@
 # McAgentBridge
 
-一个面向 **Paper / Folia / Spigot / Purpur（1.18+）** Minecraft 服务器的 HTTP API 桥接插件，让 AI Agent（或任意 HTTP 客户端）能够查看、控制并维护服务器。
+一个面向 **Paper / Folia / Spigot / Purpur（Minecraft 1.12 ~ 1.21+）** 的 HTTP API 桥接插件，让 AI Agent（或任意 HTTP 客户端）能够查看、控制并维护服务器。
 
-> 配套 Agent 技能见仓库 `skill/` 目录（`SKILL.md` + `mc_agent_client.py`）。
+> 配套 Agent 技能见仓库 `skill.zip`（`SKILL.md` + `config.yml` 示例）。
 
 ---
 
@@ -23,12 +23,12 @@
 
 | 服务端 | 版本 | 说明 |
 |--------|------|------|
-| Paper | 1.18+ | 原生支持 |
-| Folia | 1.18+ | 通过 `RegionizedServer` 反射检测，命令统一走全局区域调度 |
-| Spigot | 1.18+ | 标准 Bukkit API，兼容 |
-| Purpur | 1.18+ | 基于 Paper，兼容 |
+| Paper | 1.12+ | 原生支持 |
+| Folia | 1.12+ | 通过 `RegionizedServer` 反射检测，命令统一走全局区域调度 |
+| Spigot | 1.12+ | 标准 Bukkit API，兼容 |
+| Purpur | 1.12+ | 基于 Paper，兼容 |
 
-> `api-version: "1.18"`，`folia-compatible: true`。已验证/支持范围：Minecraft 1.18 ~ 1.21+，服务端类型 Paper / Folia / Spigot / Purpur。`/api/status` 与 `/api/health` 会返回 `server_software` 与 `minecraft_version` 供识别。
+> `api-version: "1.12"`，`folia-compatible: true`。支持范围：Minecraft 1.12 ~ 1.21+，服务端类型 Paper / Folia / Spigot / Purpur。部分字段为尽力而为（例如 1.16 以下玩家的 `ping` / `locale` 可能取不到，返回 `null` / `-1`）；TPS 在服务器 API 可用时返回。`/api/status` 与 `/api/health` 会返回 `server_software` 与 `minecraft_version` 供识别。
 
 ---
 
@@ -49,6 +49,41 @@
 | `token` | `""` | 访问令牌。留空则首次启动随机生成并写回文件 |
 | `read-only` | `false` | 为 `true` 时仅允许只读接口（status/players/worlds/logs/health） |
 | `log-lines` | `2000` | 保留的最近日志行数 |
+
+### 网络暴露（`exposure`）
+
+默认 API 仅监听 `127.0.0.1`（本机）。是否向局域网 / 公网开放由你**显式决定**，开启前插件会打印警告：
+
+| 配置项 | 默认值 | 说明 |
+|--------|--------|------|
+| `exposure.allow_lan` | `false` | 为 `true` 时绑定 `0.0.0.0`（可被局域网访问，打印警告） |
+| `exposure.allow_public` | `false` | 为 `true` 时绑定 `0.0.0.0` 并**强烈警告**：任何能访问端口且知道 token 的人都能完全控制服务器 |
+
+> 公网暴露前务必在前面加防火墙 / 反向代理 + TLS，并使用高强度 token。
+
+### 功能开关（`features`）
+
+每一项能力都可**独立**开启 / 关闭。被关闭的功能在调用时返回 `HTTP 403`，并可通过 `GET /api/status` 的 `features` 字段查询当前哪些功能可用。
+
+| 功能键 | 控制的能力 |
+|--------|-----------|
+| `status` | `/api/status` |
+| `worlds` | `/api/worlds` 及世界时间 / 天气控制 |
+| `players` | `/api/players` 列表 |
+| `inventory` | 玩家背包 / 末影箱查询 |
+| `plugins` | `/api/plugins` 列表 |
+| `plugin_action` | 插件启用 / 禁用 / 重载 |
+| `logs` | `/api/logs` |
+| `backups` | 备份列表 / 删除 |
+| `fs` | 文件系统操作 |
+| `command` | 单条命令 |
+| `commands` | 批量命令 |
+| `broadcast` | 全服广播 |
+| `whitelist` | 白名单管理 |
+| `maintenance` | 维护模式 |
+| `server_stop` | 停止服务器 |
+| `backup_create` | 创建备份 |
+| `player_action` | 踢出 / OP / 传送等玩家操作 |
 
 ---
 
@@ -109,9 +144,10 @@ GET /api/...?token=<token>
 
 ## 安全建议
 
-- **不要**将 `host` 设为 `0.0.0.0` 直接暴露公网；请放在反向代理（Nginx/Caddy）后并启用 TLS。
+- **默认仅本机可访问**：不要手动把 `host` 设为 `0.0.0.0`；如需局域网 / 公网，请使用 `exposure.allow_lan` / `exposure.allow_public` 开关，并认清其风险。
+- **公网暴露前**务必放在反向代理（Nginx/Caddy）后并启用 TLS + 防火墙。
 - 使用强随机 `token`，并通过 HTTPS 传输。
-- 若仅需查询，可开启 `read-only: true`。
+- 若仅需查询，可开启 `read-only: true`；若只需部分能力，可在 `features` 中关闭对应项。
 - 任何持有 `token` 的客户端都拥有**等同于控制台的权限**，请妥善保管。
 
 ---

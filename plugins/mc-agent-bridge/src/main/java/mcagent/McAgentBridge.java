@@ -22,10 +22,21 @@ public class McAgentBridge extends JavaPlugin {
             return;
         }
 
-        String host = cfg.getString("host", "127.0.0.1");
+        String cfgHost = cfg.getString("host", "127.0.0.1");
         int port = cfg.getInt("port", 8080);
         readOnly = cfg.getBoolean("read-only", false);
         token = cfg.getString("token", "");
+
+        boolean allowLan = cfg.getBoolean("exposure.allow_lan", false);
+        boolean allowPublic = cfg.getBoolean("exposure.allow_public", false);
+
+        java.util.Map<String, Boolean> features = new java.util.HashMap<>();
+        String[] known = {"status", "worlds", "players", "inventory", "plugins", "plugin_action",
+                "logs", "backups", "fs", "command", "commands", "broadcast", "whitelist",
+                "maintenance", "server_stop", "backup_create", "player_action"};
+        for (String k : known) features.put(k, Boolean.TRUE);
+        org.bukkit.configuration.ConfigurationSection fsec = cfg.getConfigurationSection("features");
+        if (fsec != null) for (String k : fsec.getKeys(false)) features.put(k, fsec.getBoolean(k));
 
         if (token == null || token.isEmpty()) {
             token = java.util.UUID.randomUUID().toString();
@@ -39,13 +50,23 @@ public class McAgentBridge extends JavaPlugin {
 
         File serverRoot = new File(".").getAbsoluteFile();
 
+        String bindHost = (allowPublic || allowLan) ? "0.0.0.0" : cfgHost;
+
         try {
-            apiServer = new ApiServer(this, host, port, token, readOnly, logCapture, serverRoot);
+            apiServer = new ApiServer(this, bindHost, port, token, readOnly, allowLan, allowPublic, features, logCapture, serverRoot);
             apiServer.start();
-            getLogger().info("mc-agent-bridge API listening on http://" + host + ":" + port + "/");
+            getLogger().info("mc-agent-bridge API listening on http://" + bindHost + ":" + port + "/");
             getLogger().info("Authorization: Bearer " + token);
-            if ("127.0.0.1".equals(host)) {
-                getLogger().info("Bound to localhost only. Set host: 0.0.0.0 in config.yml to expose (use a reverse proxy + TLS).");
+            if (allowPublic) {
+                getLogger().severe("=============================================================");
+                getLogger().severe("WARNING: API bound to 0.0.0.0 = PUBLIC network access.");
+                getLogger().severe("Anyone who can reach this port AND knows the token can fully control the server!");
+                getLogger().severe("Use a firewall / reverse proxy + TLS. You have been warned.");
+                getLogger().severe("=============================================================");
+            } else if (allowLan) {
+                getLogger().warning("API bound to 0.0.0.0 = LAN access. Restrict untrusted networks via firewall.");
+            } else {
+                getLogger().info("Bound to localhost only. Enable exposure.allow_lan / allow_public in config.yml to widen (see warnings).");
             }
         } catch (Exception e) {
             getLogger().severe("Failed to start mc-agent-bridge API: " + e.getMessage());

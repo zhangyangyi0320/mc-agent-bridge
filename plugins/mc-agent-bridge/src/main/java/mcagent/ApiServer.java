@@ -37,15 +37,24 @@ public class ApiServer {
     private final JavaPlugin plugin;
     private final String token;
     private final boolean readOnly;
+    private final boolean allowLan;
+    private final boolean allowPublic;
+    private final String bindHost;
+    private final java.util.Map<String, Boolean> features;
     private final LogCapture logCapture;
     private final FsOps fsOps;
     private HttpServer server;
 
     public ApiServer(JavaPlugin plugin, String host, int port, String token, boolean readOnly,
+                     boolean allowLan, boolean allowPublic, java.util.Map<String, Boolean> features,
                      LogCapture logCapture, File serverRoot) throws IOException {
         this.plugin = plugin;
         this.token = token;
         this.readOnly = readOnly;
+        this.allowLan = allowLan;
+        this.allowPublic = allowPublic;
+        this.bindHost = host;
+        this.features = features != null ? features : new java.util.HashMap<>();
         this.logCapture = logCapture;
         this.fsOps = new FsOps(serverRoot);
         this.server = HttpServer.create(new InetSocketAddress(host, port), 0);
@@ -159,11 +168,38 @@ public class ApiServer {
 
     // --------------------------------------------------------------- routing
 
+    private static String featureFor(String method, String path) {
+        if (path.equals("/api/health")) return null;
+        if (path.equals("/api/status")) return "status";
+        if (path.equals("/api/worlds")) return "worlds";
+        if (path.equals("/api/players")) return "players";
+        if (path.startsWith("/api/players/")) {
+            if (path.endsWith("/inventory") || path.endsWith("/enderchest")) return "inventory";
+            String[] seg = path.split("/");
+            return seg.length >= 5 ? "player_action" : "players";
+        }
+        if (path.equals("/api/plugins")) return "plugins";
+        if (path.startsWith("/api/plugins/")) return "plugin_action";
+        if (path.equals("/api/logs")) return "logs";
+        if (path.equals("/api/backups")) return "backups";
+        if (path.startsWith("/api/fs/")) return "fs";
+        if (path.equals("/api/command")) return "command";
+        if (path.equals("/api/commands")) return "commands";
+        if (path.equals("/api/broadcast")) return "broadcast";
+        if (path.equals("/api/whitelist")) return "whitelist";
+        if (path.equals("/api/maintenance")) return "maintenance";
+        if (path.equals("/api/server/stop")) return "server_stop";
+        if (path.equals("/api/backup")) return "backup_create";
+        return null;
+    }
+
     private Object route(String method, String path, HttpExchange ex) throws Exception {
         if (method.equals("GET") && path.equals("/api/health")) {
             return map("status", "ok", "folia", Schedulers.isFolia(),
                     "server_software", serverSoftware(),
-                    "minecraft_version", Bukkit.getServer().getBukkitVersion());
+                    "minecraft_version", Bukkit.getServer().getBukkitVersion(),
+                    "exposure", map("allow_lan", allowLan, "allow_public", allowPublic, "bind_host", bindHost),
+                    "features", new java.util.LinkedHashMap<>(features));
         }
         if (method.equals("GET") && path.equals("/api/status")) return status();
         if (method.equals("GET") && path.equals("/api/worlds")) return worlds();
@@ -247,9 +283,12 @@ public class ApiServer {
         r.put("minecraft_version", Bukkit.getServer().getBukkitVersion());
         r.put("server_version", Bukkit.getServer().getVersion());
         r.put("folia", Schedulers.isFolia());
-            r.put("online_players", Bukkit.getOnlinePlayers().size());
-            r.put("max_players", Bukkit.getServer().getMaxPlayers());
-            Runtime rt = Runtime.getRuntime();
+        r.put("online_players", Bukkit.getOnlinePlayers().size());
+        r.put("max_players", Bukkit.getServer().getMaxPlayers());
+        r.put("read_only", readOnly);
+        r.put("exposure", map("allow_lan", allowLan, "allow_public", allowPublic, "bind_host", bindHost));
+        r.put("features", new java.util.LinkedHashMap<>(features));
+        Runtime rt = Runtime.getRuntime();
             r.put("memory", map(
                     "used_mb", (rt.totalMemory() - rt.freeMemory()) / 1048576L,
                     "free_mb", rt.freeMemory() / 1048576L,
@@ -317,9 +356,9 @@ public class ApiServer {
         m.put("flying", p.isFlying());
         m.put("allow_flight", p.getAllowFlight());
         m.put("op", p.isOp());
-        m.put("ping", p.getPing());
+        try { m.put("ping", p.getPing()); } catch (Throwable t) { m.put("ping", -1); }
         m.put("ip", p.getAddress() != null ? p.getAddress().getAddress().getHostAddress() : null);
-        m.put("locale", p.getLocale());
+        try { m.put("locale", p.getLocale()); } catch (Throwable t) { m.put("locale", null); }
         m.put("first_played", p.getFirstPlayed());
         m.put("last_played", p.getLastPlayed());
         List<Object> pots = new ArrayList<>();
@@ -389,14 +428,24 @@ public class ApiServer {
 
     private Object runCommand(String cmd) throws Exception {
         return Schedulers.sync(plugin, () -> {
-            org.bukkit.command.BufferedCommandSender sender = new org.bukkit.command.BufferedCommandSender();
+            org.bukkit.command.CommandSender sender;
+            boolean buffered;
+            try {
+                sender = new org.bukkit.command.BufferedCommandSender();
+                buffered = true;
+            } catch (Throwable t) {
+                sender = Bukkit.getConsoleSender();
+                buffered = false;
+            }
             boolean ok;
             try {
                 ok = Bukkit.getServer().dispatchCommand(sender, cmd);
             } catch (Exception e) {
-                return map("command", cmd, "success", false, "error", e.getMessage(), "output", sender.getBuffer());
+                String out = buffered ? ((org.bukkit.command.BufferedCommandSender) sender).getBuffer() : "";
+                return map("command", cmd, "success", false, "error", e.getMessage(), "output", out);
             }
-            return map("command", cmd, "success", ok, "output", sender.getBuffer());
+            String out = buffered ? ((org.bukkit.command.BufferedCommandSender) sender).getBuffer() : "";
+            return map("command", cmd, "success", ok, "output", out);
         });
     }
 
@@ -414,15 +463,25 @@ public class ApiServer {
             }
             List<Object> results = new ArrayList<>();
             for (String c : cmds) {
-                org.bukkit.command.BufferedCommandSender sender = new org.bukkit.command.BufferedCommandSender();
+                org.bukkit.command.CommandSender sender;
+                boolean buffered;
+                try {
+                    sender = new org.bukkit.command.BufferedCommandSender();
+                    buffered = true;
+                } catch (Throwable t) {
+                    sender = Bukkit.getConsoleSender();
+                    buffered = false;
+                }
                 boolean ok;
                 try {
                     ok = Bukkit.getServer().dispatchCommand(sender, c);
                 } catch (Exception e) {
-                    results.add(map("command", c, "success", false, "error", e.getMessage(), "output", sender.getBuffer()));
+                    String out = buffered ? ((org.bukkit.command.BufferedCommandSender) sender).getBuffer() : "";
+                    results.add(map("command", c, "success", false, "error", e.getMessage(), "output", out));
                     continue;
                 }
-                results.add(map("command", c, "success", ok, "output", sender.getBuffer()));
+                String out = buffered ? ((org.bukkit.command.BufferedCommandSender) sender).getBuffer() : "";
+                results.add(map("command", c, "success", ok, "output", out));
             }
             return map("count", results.size(), "results", results);
         });
@@ -662,6 +721,11 @@ public class ApiServer {
                     plugin.getLogger().warning("McAgentBridge: unauthorized request rejected: "
                             + method + " " + path + " from " + ex.getRemoteAddress());
                     send(ex, 401, Json.toJson(err("unauthorized")));
+                    return;
+                }
+                String feature = featureFor(method, path);
+                if (feature != null && !features.getOrDefault(feature, Boolean.TRUE)) {
+                    send(ex, 403, Json.toJson(err("feature disabled: " + feature)));
                     return;
                 }
                 Object result = route(method, path, ex);

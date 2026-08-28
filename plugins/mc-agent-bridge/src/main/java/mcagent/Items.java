@@ -29,12 +29,21 @@ public final class Items {
             if (!meta.getEnchants().isEmpty()) {
                 Map<String, Integer> ench = new LinkedHashMap<>();
                 for (Map.Entry<Enchantment, Integer> e : meta.getEnchants().entrySet()) {
-                    ench.put(e.getKey().getKey().getKey(), e.getValue());
+                    Enchantment enchObj = e.getKey();
+                    String key;
+                    try {
+                        key = enchObj.getKey().getKey();
+                    } catch (Throwable t) {
+                        key = enchObj.getName();
+                    }
+                    ench.put(key, e.getValue());
                 }
                 m.put("enchantments", ench);
             }
             if (meta instanceof Damageable d && d.getDamage() > 0) m.put("damage", d.getDamage());
-            if (meta.hasCustomModelData()) m.put("custom_model_data", meta.getCustomModelData());
+            try {
+                if (meta.hasCustomModelData()) m.put("custom_model_data", meta.getCustomModelData());
+            } catch (Throwable ignored) { /* < 1.14 */ }
         }
         return m;
     }
