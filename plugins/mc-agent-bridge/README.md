@@ -85,6 +85,18 @@
 | `backup_create` | 创建备份 |
 | `player_action` | 踢出 / OP / 传送等玩家操作 |
 
+### 游戏内指令 `/mab`（无需改配置即可开关）
+
+拥有 `mcagentbridge.admin` 权限（默认 OP）的玩家可在游戏内直接开关各项功能，改动即时生效并写入 `config.yml`：
+
+| 指令 | 说明 |
+|------|------|
+| `/mab list` | 列出所有功能及其当前开 / 关状态 |
+| `/mab <功能>` | 切换该功能的开 / 关（自动取反） |
+| `/mab <功能> on\|off\|toggle` | 设定状态（如 `/mab command off`） |
+
+示例：`/mab command off` 会立即禁止通过 API 执行命令（调用时返回 `403`），重新开启用 `/mab command on`。
+
 ---
 
 ## API 概览

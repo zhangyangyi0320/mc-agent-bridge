@@ -107,6 +107,9 @@ All request/response bodies are JSON. `200` = success, `400` = bad input,
   and are returned as `null`/`-1`). TPS is reported when the server API exposes it.
 - **Server software**: detected automatically (Paper / Folia / Spigot / Purpur /
   CraftBukkit / Forge / Unknown) and reported in `/api/status` and `/api/health`.
+- **In-game toggles**: server operators with the `mcagentbridge.admin` permission
+  (default: OP) can run `/mab list` and `/mab <feature> [on|off|toggle]` to switch
+  any capability live; changes persist to `config.yml` and take effect immediately.
 
 ## Recommended workflow for an agent
 

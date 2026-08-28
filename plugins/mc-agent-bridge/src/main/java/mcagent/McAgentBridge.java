@@ -68,6 +68,13 @@ public class McAgentBridge extends JavaPlugin {
             } else {
                 getLogger().info("Bound to localhost only. Enable exposure.allow_lan / allow_public in config.yml to widen (see warnings).");
             }
+
+            var mabCmd = getCommand("mab");
+            if (mabCmd != null) {
+                mabCmd.setExecutor(new McAgentCommand(this, features));
+                mabCmd.setTabCompleter(new McAgentCommand(this, features));
+                getLogger().info("Registered /mab command for in-game feature toggles (permission: mcagentbridge.admin).");
+            }
         } catch (Exception e) {
             getLogger().severe("Failed to start mc-agent-bridge API: " + e.getMessage());
             e.printStackTrace();
