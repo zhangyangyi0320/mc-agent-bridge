@@ -1,5 +1,7 @@
 package mcagent;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -119,7 +121,12 @@ public class ApiServer {
     @SuppressWarnings("unchecked")
     private Map<String, Object> readJson(HttpExchange ex) {
         try {
-            String body = new String(ex.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+            java.io.InputStream is = ex.getRequestBody();
+            java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+            byte[] buf = new byte[4096];
+            int n;
+            while ((n = is.read(buf)) != -1) bos.write(buf, 0, n);
+            String body = new String(bos.toByteArray(), StandardCharsets.UTF_8);
             if (body.isEmpty()) return new LinkedHashMap<>();
             Object parsed = Json.parse(body);
             if (parsed instanceof Map) return (Map<String, Object>) parsed;
@@ -273,7 +280,8 @@ public class ApiServer {
         return Schedulers.sync(plugin, () -> {
         Map<String, Object> r = new LinkedHashMap<>();
         double[] tps;
-        try { tps = Bukkit.getServer().getTPS(); } catch (Throwable t) { tps = new double[]{-1, -1, -1}; }
+        try { tps = Bukkit.getServer().getTPS(); } catch (Throwable t) { tps = null; }
+        if (tps == null) tps = new double[]{-1, -1, -1};
         r.put("tps", new double[]{round(tps[0]), round(tps[1]), round(tps[2])});
         double mspt;
         try { mspt = Bukkit.getServer().getAverageTickTime(); } catch (Throwable t) { mspt = -1; }
@@ -305,7 +313,9 @@ public class ApiServer {
                 Map<String, Object> m = new LinkedHashMap<>();
                 m.put("name", w.getName());
                 m.put("environment", w.getEnvironment().name());
-                m.put("entities", w.getEntityCount());
+                int entityCount;
+                try { entityCount = w.getEntityCount(); } catch (Throwable t) { entityCount = -1; }
+                m.put("entities", entityCount);
                 m.put("chunks", w.getLoadedChunks().length);
                 m.put("players", w.getPlayers().size());
                 list.add(m);
@@ -734,8 +744,10 @@ public class ApiServer {
                     return;
                 }
                 send(ex, 200, Json.toJson(result));
-            } catch (Exception e) {
-                send(ex, 500, Json.toJson(map("error", String.valueOf(e.getMessage()))));
+            } catch (Throwable e) {
+                StringWriter sw = new StringWriter();
+                e.printStackTrace(new PrintWriter(sw));
+                try { send(ex, 500, sw.toString()); } catch (Throwable ignore) {}
             } finally {
                 ex.close();
             }

@@ -3,7 +3,6 @@ package mcagent;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
@@ -40,7 +39,15 @@ public final class Items {
                 }
                 m.put("enchantments", ench);
             }
-            if (meta instanceof Damageable d && d.getDamage() > 0) m.put("damage", d.getDamage());
+            // Damageable was only added in 1.13; read it reflectively so this class
+            // still loads on older servers (1.8.x) where the interface is absent.
+            try {
+                java.lang.reflect.Method gm = meta.getClass().getMethod("getDamage");
+                Object dv = gm.invoke(meta);
+                if (dv instanceof Number && ((Number) dv).intValue() > 0) {
+                    m.put("damage", ((Number) dv).intValue());
+                }
+            } catch (Throwable ignored) { /* < 1.13 */ }
             try {
                 if (meta.hasCustomModelData()) m.put("custom_model_data", meta.getCustomModelData());
             } catch (Throwable ignored) { /* < 1.14 */ }

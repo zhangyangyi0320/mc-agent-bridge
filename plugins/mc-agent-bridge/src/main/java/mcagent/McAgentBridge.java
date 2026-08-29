@@ -1,6 +1,8 @@
 package mcagent;
 
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.command.PluginCommand;
+import org.bukkit.configuration.file.FileConfiguration;
 
 import java.io.File;
 import java.util.logging.Logger;
@@ -15,7 +17,7 @@ public class McAgentBridge extends JavaPlugin {
     @Override
     public void onEnable() {
         saveDefaultConfig();
-        var cfg = getConfig();
+        FileConfiguration cfg = getConfig();
 
         if (!cfg.getBoolean("enabled", true)) {
             getLogger().info("mc-agent-bridge is disabled in config.yml");
@@ -69,12 +71,15 @@ public class McAgentBridge extends JavaPlugin {
                 getLogger().info("Bound to localhost only. Enable exposure.allow_lan / allow_public in config.yml to widen (see warnings).");
             }
 
-            var mabCmd = getCommand("mab");
-            if (mabCmd != null) {
-                mabCmd.setExecutor(new McAgentCommand(this, features));
-                mabCmd.setTabCompleter(new McAgentCommand(this, features));
-                getLogger().info("Registered /mab command for in-game feature toggles (permission: mcagentbridge.admin).");
-            }
+            final java.util.Map<String, Boolean> fCopy = new java.util.HashMap<>(features);
+            Schedulers.submit(this, () -> {
+                PluginCommand mabCmd = getCommand("mab");
+                if (mabCmd != null) {
+                    mabCmd.setExecutor(new McAgentCommand(this, fCopy));
+                    mabCmd.setTabCompleter(new McAgentCommand(this, fCopy));
+                    getLogger().info("Registered /mab command for in-game feature toggles (permission: mcagentbridge.admin).");
+                }
+            });
         } catch (Exception e) {
             getLogger().severe("Failed to start mc-agent-bridge API: " + e.getMessage());
             e.printStackTrace();

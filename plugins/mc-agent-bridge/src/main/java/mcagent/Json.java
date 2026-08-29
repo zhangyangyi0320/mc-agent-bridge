@@ -49,11 +49,12 @@ public final class Json {
         }
         if (o.getClass().isArray()) {
             sb.append('[');
+            int len = java.lang.reflect.Array.getLength(o);
             boolean first = true;
-            for (Object v : (Object[]) o) {
+            for (int k = 0; k < len; k++) {
                 if (!first) sb.append(',');
                 first = false;
-                write(v, sb);
+                write(java.lang.reflect.Array.get(o, k), sb);
             }
             sb.append(']');
             return;

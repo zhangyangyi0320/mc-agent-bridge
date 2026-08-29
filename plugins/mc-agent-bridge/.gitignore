@@ -1,3 +1,25 @@
+# Build artifacts
 build/
+build2/
+build3/
+out999/
+stubclasses/
 __pycache__/
 *.class
+
+# Agent skill noise (not part of the plugin)
+skill/
+SKILL.md
+skill.zip
+
+# Release jars (published as GitHub/Gitee release assets)
+McAgentBridge*.jar
+
+# Generated test results
+tools/results.json
+tools/results.csv
+
+# sweep runtime logs
+tools/sweep.log
+tools/sweep.err
+
